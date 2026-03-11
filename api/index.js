@@ -418,8 +418,9 @@ app.get('/api/registros/export', async (req, res) => {
             const duracao = p.saida ? ((new Date(p.saida) - new Date(p.entrada)) / 36e5).toFixed(2) : 'N/A';
             worksheet.addRow({
                 username: p.username,
-                entrada: new Date(p.entrada).toLocaleString('pt-BR'),
-                saida: p.saida ? new Date(p.saida).toLocaleString('pt-BR') : 'Em serviço',
+                // FORÇANDO O FUSO DE SÃO PAULO AQUI NAS DATAS DE EXCEL
+                entrada: new Date(p.entrada).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+                saida: p.saida ? new Date(p.saida).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Em serviço',
                 duracao: duracao
             });
         });
@@ -436,8 +437,9 @@ app.get('/api/registros/export', async (req, res) => {
         filteredPontos.forEach(p => {
             const duracao = p.saida ? ((new Date(p.saida) - new Date(p.entrada)) / 36e5).toFixed(2) + 'h' : 'Em serviço';
             doc.fontSize(10).text(
-                `Usuário: ${p.username}\nEntrada: ${new Date(p.entrada).toLocaleString('pt-BR')}\n` +
-                `Saída: ${p.saida ? new Date(p.saida).toLocaleString('pt-BR') : 'N/A'}\nDuração: ${duracao}\n`,
+                // FORÇANDO O FUSO DE SÃO PAULO AQUI NAS DATAS DO PDF
+                `Usuário: ${p.username}\nEntrada: ${new Date(p.entrada).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n` +
+                `Saída: ${p.saida ? new Date(p.saida).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}\nDuração: ${duracao}\n`,
                 { lineGap: 4 }
             );
             doc.lineCap('round').moveTo(doc.x, doc.y).lineTo(565, doc.y).strokeColor("#dddddd").stroke();
@@ -513,10 +515,12 @@ app.get('/api/members/:discordUserId/stats', async (req, res) => {
                 totalHoursThisMonthMs += duration;
             }
 
-            // Popula o heatmap
-            const entryDate = new Date(ponto.entrada);
-            const dayOfWeek = entryDate.getDay(); // Domingo = 0, Sábado = 6
-            const hour = entryDate.getHours();
+            // CORREÇÃO: Força o timezone do Brasil para agrupar corretamente o heatmap
+            const spDateText = new Date(ponto.entrada).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+            const spDate = new Date(spDateText);
+            
+            const dayOfWeek = spDate.getDay(); // Domingo = 0, Sábado = 6
+            const hour = spDate.getHours();
             activityHeatmap[dayOfWeek][hour]++;
         });
 
